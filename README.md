@@ -1,98 +1,162 @@
-# postgreSQl
-
-# PostgreSQL with Docker - Setup Guide
-
-This guide will help you set up PostgreSQL inside a Docker container with persistent storage.
+# PostgreSQL & Docker Setup Guide
 
 ## Prerequisites
-- Ensure **Docker** is installed. If not, install it with:
-  ```bash
-  sudo apt update
-  sudo apt install docker.io -y
-  ```
-- Start and enable Docker:
-  ```bash
-  sudo systemctl start docker
-  sudo systemctl enable docker
-  ```
-- Verify Docker installation:
-  ```bash
-  docker --version
-  ```
+Ensure your system is up to date:
+```bash
+sudo apt update && sudo apt upgrade -y
+```
 
-## Step 1: Pull the PostgreSQL Docker Image
+---
+
+## Installing Docker
+
+1. **Uninstall old versions (if any):**
+```bash
+sudo apt remove docker docker-engine docker.io containerd runc
+```
+
+2. **Install dependencies:**
+```bash
+sudo apt install ca-certificates curl -y
+```
+
+3. **Add Docker’s official GPG key:**
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+```
+
+4. **Add the Docker repository:**
+```bash
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+5. **Install Docker & Plugins:**
+```bash
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+```
+
+6. **Start & Enable Docker:**
+```bash
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+7. **Verify installation:**
+```bash
+docker --version
+docker info
+```
+
+---
+
+## Installing PostgreSQL (Native Ubuntu Installation)
+
+1. **Install PostgreSQL:**
+```bash
+sudo apt install postgresql postgresql-contrib -y
+```
+
+2. **Start & Enable PostgreSQL:**
+```bash
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+3. **Access PostgreSQL:**
+```bash
+sudo -u postgres psql
+```
+
+4. **Create a New User & Database:**
+```sql
+CREATE USER myuser WITH ENCRYPTED PASSWORD 'mypassword';
+CREATE DATABASE mydb OWNER myuser;
+```
+
+5. **Exit PostgreSQL:**
+```sql
+\q
+```
+
+---
+
+## Running PostgreSQL in Docker
+
+1. **Pull the PostgreSQL Image:**
 ```bash
 docker pull postgres
 ```
 
-## Step 2: Run PostgreSQL Container
+2. **Run a PostgreSQL Container:**
 ```bash
-docker run --name postgres-container \
-  -e POSTGRES_USER=omer \
-  -e POSTGRES_PASSWORD="omer@2006" \
-  -e POSTGRES_DB=mydatabase \
-  -p 5432:5432 \
-  -d postgres
+docker run --name my_postgres -e POSTGRES_USER=myuser -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=mydb -p 5432:5432 -d postgres
 ```
 
-## Step 3: Verify the Container is Running
+3. **Access the PostgreSQL Container:**
+```bash
+docker exec -it my_postgres psql -U myuser -d mydb
+```
+
+4. **Stopping & Removing the Container:**
+```bash
+docker stop my_postgres
+docker rm my_postgres
+```
+
+---
+
+## Using PostgreSQL
+
+### Connecting via `psql` (Native Install)
+```bash
+psql -U myuser -d mydb -h localhost -p 5432
+```
+
+### Connecting via Docker
+```bash
+docker exec -it my_postgres psql -U myuser -d mydb
+```
+
+---
+
+## Additional Commands
+
+### Check Running Containers:
 ```bash
 docker ps
 ```
-If the container is stopped, check all containers:
+
+### View PostgreSQL Logs:
 ```bash
-docker ps -a
+docker logs my_postgres
 ```
 
-## Step 4: Connect to PostgreSQL
+### Restart PostgreSQL (Native):
 ```bash
-docker exec -it postgres-container psql -U omer -d mydatabase
-```
-Test connection inside PostgreSQL:
-```sql
-SELECT NOW();
+sudo systemctl restart postgresql
 ```
 
-## Step 5: Manage the PostgreSQL Container
-- **Stop the Container:**
-  ```bash
-  docker stop postgres-container
-  ```
-- **Start the Container:**
-  ```bash
-  docker start postgres-container
-  ```
-- **View Container Logs:**
-  ```bash
-  docker logs postgres-container
-  ```
-- **Remove the Container:**
-  ```bash
-  docker rm -f postgres-container
-  ```
+---
 
-## Step 6: Persistent Storage (Recommended)
-To persist data, create a volume:
+## Uninstalling PostgreSQL
+
+**For Native Installation:**
 ```bash
-docker volume create pgdata
+sudo apt remove --purge postgresql postgresql-contrib -y
+sudo apt autoremove -y
+sudo rm -rf /var/lib/postgresql
 ```
-Run PostgreSQL with persistent storage:
+
+**For Docker Installation:**
 ```bash
-docker run --name postgres-container \
-  -e POSTGRES_USER=omer \
-  -e POSTGRES_PASSWORD="omer@2006" \
-  -e POSTGRES_DB=mydatabase \
-  -p 5432:5432 \
-  -v pgdata:/var/lib/postgresql/data \
-  -d postgres
+docker stop my_postgres
+docker rm my_postgres
+docker rmi postgres
 ```
 
-## Step 7: Connect PostgreSQL to GUI (pgAdmin/DBeaver)
-- **Host:** `localhost`
-- **Port:** `5432`
-- **Username:** `omer`
-- **Password:** `omer@2006`
-- **Database:** `mydatabase`
+---
 
-## Done 🎉
-You now have PostgreSQL running inside Docker. 🚀
+🚀 **Your PostgreSQL setup is ready!**
