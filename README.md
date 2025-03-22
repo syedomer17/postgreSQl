@@ -1,162 +1,210 @@
-# PostgreSQL & Docker Setup Guide
+# PostgreSQL Setup & Commands in WSL (Windows Subsystem for Linux)
 
-## Prerequisites
-Ensure your system is up to date:
-```bash
+This guide covers how to install, set up, and use PostgreSQL in **WSL (Windows Subsystem for Linux)**, including database creation, management, and connecting it to Node.js in VS Code.
+
+---
+
+## 📌 **1. Install PostgreSQL in WSL**
+
+### 🔹 **Update Package Lists**
+```sh
 sudo apt update && sudo apt upgrade -y
 ```
+**Explanation:** Ensures your system packages are up to date.
 
----
-
-## Installing Docker
-
-1. **Uninstall old versions (if any):**
-```bash
-sudo apt remove docker docker-engine docker.io containerd runc
-```
-
-2. **Install dependencies:**
-```bash
-sudo apt install ca-certificates curl -y
-```
-
-3. **Add Docker’s official GPG key:**
-```bash
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-```
-
-4. **Add the Docker repository:**
-```bash
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-```
-
-5. **Install Docker & Plugins:**
-```bash
-sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
-```
-
-6. **Start & Enable Docker:**
-```bash
-sudo systemctl start docker
-sudo systemctl enable docker
-```
-
-7. **Verify installation:**
-```bash
-docker --version
-docker info
-```
-
----
-
-## Installing PostgreSQL (Native Ubuntu Installation)
-
-1. **Install PostgreSQL:**
-```bash
+### 🔹 **Install PostgreSQL**
+```sh
 sudo apt install postgresql postgresql-contrib -y
 ```
+**Explanation:** Installs PostgreSQL and additional utilities.
 
-2. **Start & Enable PostgreSQL:**
-```bash
-sudo systemctl start postgresql
+### 🔹 **Start PostgreSQL Service**
+```sh
+sudo service postgresql start
+```
+**Explanation:** Starts the PostgreSQL service.
+
+### 🔹 **Enable PostgreSQL to Start on Boot**
+```sh
 sudo systemctl enable postgresql
 ```
+**Explanation:** Ensures PostgreSQL starts automatically.
 
-3. **Access PostgreSQL:**
-```bash
-sudo -u postgres psql
+---
+
+## 📌 **2. Access PostgreSQL in WSL**
+
+### 🔹 **Switch to the PostgreSQL User**
+```sh
+sudo -i -u postgres
 ```
+**Explanation:** Logs in as the `postgres` superuser.
 
-4. **Create a New User & Database:**
-```sql
-CREATE USER myuser WITH ENCRYPTED PASSWORD 'mypassword';
-CREATE DATABASE mydb OWNER myuser;
+### 🔹 **Open PostgreSQL Shell (psql)**
+```sh
+psql
 ```
+**Explanation:** Opens the PostgreSQL interactive terminal.
 
-5. **Exit PostgreSQL:**
+### 🔹 **Exit PostgreSQL Shell**
 ```sql
 \q
 ```
+**Explanation:** Exits the `psql` terminal.
 
 ---
 
-## Running PostgreSQL in Docker
+## 📌 **3. Database Management**
 
-1. **Pull the PostgreSQL Image:**
-```bash
-docker pull postgres
+### 🔹 **Create a New Database**
+```sql
+CREATE DATABASE my_database;
 ```
+**Explanation:** Creates a database named `my_database`.
 
-2. **Run a PostgreSQL Container:**
-```bash
-docker run --name my_postgres -e POSTGRES_USER=myuser -e POSTGRES_PASSWORD=mypassword -e POSTGRES_DB=mydb -p 5432:5432 -d postgres
+### 🔹 **List All Databases**
+```sql
+\l
 ```
+**Explanation:** Displays a list of databases.
 
-3. **Access the PostgreSQL Container:**
-```bash
-docker exec -it my_postgres psql -U myuser -d mydb
+### 🔹 **Connect to a Database**
+```sh
+psql -d my_database
 ```
+**Explanation:** Connects to `my_database`.
 
-4. **Stopping & Removing the Container:**
-```bash
-docker stop my_postgres
-docker rm my_postgres
+### 🔹 **Drop (Delete) a Database**
+```sql
+DROP DATABASE my_database;
+```
+**Explanation:** Permanently deletes `my_database`.
+
+---
+
+## 📌 **4. User & Role Management**
+
+### 🔹 **Create a New PostgreSQL User**
+```sql
+CREATE USER my_user WITH PASSWORD 'mypassword';
+```
+**Explanation:** Creates a new user with login access.
+
+### 🔹 **Grant Privileges to a User**
+```sql
+GRANT ALL PRIVILEGES ON DATABASE my_database TO my_user;
+```
+**Explanation:** Grants all privileges on `my_database` to `my_user`.
+
+### 🔹 **Delete a PostgreSQL User**
+```sql
+DROP USER my_user;
+```
+**Explanation:** Removes `my_user` from PostgreSQL.
+
+---
+
+## 📌 **5. Table Management**
+
+### 🔹 **Create a Table**
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    age INT
+);
+```
+**Explanation:** Creates a `users` table.
+
+### 🔹 **List Tables in a Database**
+```sql
+\dt
+```
+**Explanation:** Shows all tables in the current database.
+
+### 🔹 **Drop a Table**
+```sql
+DROP TABLE users;
+```
+**Explanation:** Deletes the `users` table.
+
+---
+
+## 📌 **6. Start, Stop, and Restart PostgreSQL in WSL**
+
+### 🔹 **Start PostgreSQL**
+```sh
+sudo service postgresql start
+```
+**Explanation:** Starts PostgreSQL.
+
+### 🔹 **Stop PostgreSQL**
+```sh
+sudo service postgresql stop
+```
+**Explanation:** Stops PostgreSQL.
+
+### 🔹 **Restart PostgreSQL**
+```sh
+sudo service postgresql restart
+```
+**Explanation:** Restarts PostgreSQL.
+
+---
+
+## 📌 **7. Connect PostgreSQL to Node.js in VS Code**
+
+### 🔹 **Install Required Dependencies**
+```sh
+npm install pg dotenv
+```
+**Explanation:** Installs `pg` (PostgreSQL client for Node.js) and `dotenv` for environment variables.
+
+### 🔹 **Create a `.env` File**
+```env
+DATABASE_URL=postgres://my_user:mypassword@localhost:5432/my_database
+```
+**Explanation:** Stores the database connection string.
+
+### 🔹 **Connect to PostgreSQL in Node.js**
+Create a file `db.js` in your project and add:
+```js
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+export default pool;
+```
+**Explanation:** Sets up a connection pool using environment variables.
+
+### 🔹 **Test the Connection**
+Create a file `test.js`:
+```js
+import pool from './db.js';
+
+(async () => {
+  try {
+    const res = await pool.query('SELECT NOW();');
+    console.log('Database connected at:', res.rows[0].now);
+  } catch (err) {
+    console.error('Database connection error:', err);
+  }
+})();
+```
+**Explanation:** Runs a simple query to check the connection.
+
+Run the test file with:
+```sh
+node test.js
 ```
 
 ---
 
-## Using PostgreSQL
-
-### Connecting via `psql` (Native Install)
-```bash
-psql -U myuser -d mydb -h localhost -p 5432
-```
-
-### Connecting via Docker
-```bash
-docker exec -it my_postgres psql -U myuser -d mydb
-```
-
----
-
-## Additional Commands
-
-### Check Running Containers:
-```bash
-docker ps
-```
-
-### View PostgreSQL Logs:
-```bash
-docker logs my_postgres
-```
-
-### Restart PostgreSQL (Native):
-```bash
-sudo systemctl restart postgresql
-```
-
----
-
-## Uninstalling PostgreSQL
-
-**For Native Installation:**
-```bash
-sudo apt remove --purge postgresql postgresql-contrib -y
-sudo apt autoremove -y
-sudo rm -rf /var/lib/postgresql
-```
-
-**For Docker Installation:**
-```bash
-docker stop my_postgres
-docker rm my_postgres
-docker rmi postgres
-```
-
----
-
-🚀 **Your PostgreSQL setup is ready!**
+## 🎯 **Conclusion**
+This guide helps you install, configure, and manage PostgreSQL inside WSL, as well as connect it to Node.js in VS Code. Let me know if you need additional steps! 🚀
